@@ -12,7 +12,7 @@ const LIGHT = "LIGHT",
   SWORD = "SWORD";
 
 var swordActivated = false;
-const SWORD_TIMEOUT_THRESHOLD = 1000;
+const SWORD_TIMEOUT_THRESHOLD = 2000;
 
 const score = {
   assignedPatterns: [],
