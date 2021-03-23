@@ -6,14 +6,21 @@ const PORT = process.env.PORT || 5000;
 const LIGHT = "LIGHT",
   BOARD = "BOARD",
   SCORE = "SCORE",
+  RESULT = "RESULT",
+  ASSIGN_PATTERN = "ASSIGN_PATTERN",
+  REGISTER_CLIENT = "REGISTER_CLIENT",
   SWORD = "SWORD";
 
 var swordActivated = false;
 const SWORD_TIMEOUT_THRESHOLD = 1000;
 
+const score = {
+  assignedPatterns: [],
+  patternFenced: [],
+};
+
 const devices = {
   LIGHT,
-  SCORE,
   SWORD,
   BOARD,
 };
@@ -26,28 +33,50 @@ io.sockets.on("connection", function (socket) {
   console.log("Socket connected - " + socket.id);
 
   //   Register device type
-  socket.on("register-client", function (data) {
+  socket.on(REGISTER_CLIENT, function (data) {
     console.log("Socket registered - " + socket.id + " " + data);
     devices[data] = socket.id;
   });
 
-  //   Sword activation
-  socket.on(SWORD, (socket) => {
-    swordActivated = true;
-    setTimeout(() => {
-      if (swordActivated) {
-        swordActivated = false;
-      }
-    }, SWORD_TIMEOUT_THRESHOLD);
+  //   Fence activation
+  socket.on(SWORD, fenceListener);
+  socket.on(BOARD, fenceListener);
+
+  //   Assign pattern
+  socket.on(ASSIGN_PATTERN, (data) => {
+    console.log(data);
+    score.assignedPatterns = data || [];
   });
 
-  socket.on(BOARD, (socket) => {});
+  //   Emit score
+  socket.on(SCORE, () => {
+    const scoreString = `${score.patternFenced.length}/${score.assignedPatterns.length}`;
+    io.to(socket.id).emit(RESULT, scoreString);
+  });
 });
 
-const emitLight = () => {
+const fenceListener = (data) => {
   if (swordActivated) {
-    swordActivated = false;
-    //TODO: check pattern before emitting to light.
+    return successFence(data);
+  }
+
+  swordActivated = true;
+  setTimeout(() => {
+    if (swordActivated) {
+      swordActivated = false;
+    }
+  }, SWORD_TIMEOUT_THRESHOLD);
+};
+
+const successFence = (data) => {
+  swordActivated = false;
+  //TODO: check pattern before emitting to light.
+
+  if (score.assignedPatterns.includes(data)) {
+    if (!score.patternFenced.includes(data)) {
+      score.patternFenced.push(data);
+    }
+    //   Emit light
     io.to(devices.LIGHT).emit(LIGHT, 1);
   }
 };
