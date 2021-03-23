@@ -10,7 +10,8 @@ app.get("/", (req, res) => {
 io.sockets.on("connection", function (socket) {
   console.log("Socket connected - " + socket.id);
   socket.on("register-client", function (data) {
-    socket.join(data);
+    console.log("Socket emitted - " + socket.id + " " + data);
+    // socket.join(data);
   });
 });
 
