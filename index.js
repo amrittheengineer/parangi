@@ -51,7 +51,7 @@ io.sockets.on("connection", function (socket) {
   //   Emit score
   socket.on(SCORE, () => {
     const scoreString = `${score.patternFenced.length}/${score.assignedPatterns.length}`;
-    io.to(socket.id).emit(RESULT, scoreString);
+    io.emit(RESULT, scoreString);
   });
 });
 
