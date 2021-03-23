@@ -3,6 +3,10 @@ const http = require("http").Server(app);
 const io = require("socket.io")(http);
 const PORT = process.env.PORT || 5000;
 
+app.get("/", (req, res) => {
+  res.send("Parangi App!");
+});
+
 io.sockets.on("connection", function (socket) {
   console.log("Socket connected - " + socket.id);
   socket.on("register-client", function (data) {
