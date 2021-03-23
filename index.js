@@ -1,8 +1,7 @@
-var io = require("socket.io").listen(80);
-
-const LIGHT = "light";
-const STUDENT = "student";
-const TEACHER = "";
+const app = require("express")();
+const http = require("http").Server(app);
+const io = require("socket.io")(http);
+const PORT = process.env.PORT || 5000;
 
 io.sockets.on("connection", function (socket) {
   console.log("Socket connected - " + socket.id);
@@ -10,3 +9,5 @@ io.sockets.on("connection", function (socket) {
     socket.join(data);
   });
 });
+
+http.listen(PORT, () => console.log("App is running at port " + PORT));
