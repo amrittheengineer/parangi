@@ -71,6 +71,8 @@ const fenceListener = (data) => {
   setTimeout(() => {
     if (swordActivated) {
       swordActivated = false;
+    } else {
+      io.emit(LIGHT, 2);
     }
   }, SWORD_TIMEOUT_THRESHOLD);
 };
