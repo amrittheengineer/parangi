@@ -71,8 +71,6 @@ const fenceListener = (data) => {
   setTimeout(() => {
     if (swordActivated) {
       swordActivated = false;
-    } else {
-      io.emit(LIGHT, 2);
     }
   }, SWORD_TIMEOUT_THRESHOLD);
 };
@@ -85,8 +83,11 @@ const successFence = (data) => {
     if (!score.patternFenced.includes(data)) {
       score.patternFenced.push(data);
     }
-    //   Emit light
+    //   Emit success light
     io.emit(LIGHT, 1);
+  } else {
+    //   Emit failure light
+    io.emit(LIGHT, 2);
   }
 };
 
