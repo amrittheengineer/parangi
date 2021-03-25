@@ -26,7 +26,8 @@ const devices = {
 };
 
 app.get("/", (req, res) => {
-  res.send("Parangi App!");
+  res.send("Emitted to " + devices.LIGHT);
+  io.to(devices.LIGHT).emit(LIGHT, 1);
 });
 
 io.sockets.on("connection", function (socket) {
@@ -51,6 +52,7 @@ io.sockets.on("connection", function (socket) {
   //   Emit score
   socket.on(SCORE, () => {
     const scoreString = `${score.patternFenced.length}/${score.assignedPatterns.length}`;
+    console.log(SCORE, scoreString);
     io.emit(RESULT, scoreString);
   });
 });
