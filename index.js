@@ -26,8 +26,13 @@ const devices = {
 };
 
 app.get("/", (req, res) => {
-  res.send("Emitted to " + devices.LIGHT);
+  res.send("Emitted 1 to " + devices.LIGHT);
   io.to(devices.LIGHT).emit(LIGHT, 1);
+});
+
+app.get("/l2", (req, res) => {
+  res.send("Emitted 2 to " + devices.LIGHT);
+  io.to(devices.LIGHT).emit(LIGHT, 2);
 });
 
 io.sockets.on("connection", function (socket) {
