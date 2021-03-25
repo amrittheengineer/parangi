@@ -11,7 +11,7 @@ const LIGHT = "LIGHT",
   REGISTER_CLIENT = "REGISTER_CLIENT",
   SWORD = "SWORD";
 
-var swordActivated = false;
+var activatedPoint = null;
 const SWORD_TIMEOUT_THRESHOLD = 2000;
 
 const score = {
@@ -45,8 +45,8 @@ io.sockets.on("connection", function (socket) {
   });
 
   //   Fence activation
-  socket.on(SWORD, fenceListener);
-  socket.on(BOARD, fenceListener);
+  socket.on(SWORD, onSwordSuccess);
+  socket.on(BOARD, onBoardSuccess);
 
   //   Assign pattern
   socket.on(ASSIGN_PATTERN, (data) => {
@@ -62,23 +62,32 @@ io.sockets.on("connection", function (socket) {
   });
 });
 
-const fenceListener = (data) => {
-  if (swordActivated) {
-    return successFence(data);
+// const fenceListener = (data) => {
+//   if (activated) {
+//     return successFence(data);
+//   }
+
+//   activated = true;
+//   setTimeout(() => {
+//     if (activated) {
+//       activated = false;
+//     }
+//   }, SWORD_TIMEOUT_THRESHOLD);
+// };
+
+var swordActivated = false;
+
+const onBoardSuccess = (data) => {
+  if (!swordActivated) {
+    activatedPoint = data;
+    setTimeout(() => {
+      if (activatedPoint) {
+        console.log("Board deactivated - " + activatedPoint);
+        activatedPoint = null;
+      }
+    }, SWORD_TIMEOUT_THRESHOLD);
+    return;
   }
-
-  swordActivated = true;
-  setTimeout(() => {
-    if (swordActivated) {
-      swordActivated = false;
-    }
-  }, SWORD_TIMEOUT_THRESHOLD);
-};
-
-const successFence = (data) => {
-  swordActivated = false;
-  //TODO: check pattern before emitting to light.
-
   if (score.assignedPatterns.includes(data)) {
     if (!score.patternFenced.includes(data)) {
       score.patternFenced.push(data);
@@ -88,6 +97,40 @@ const successFence = (data) => {
   } else {
     //   Emit failure light
     io.emit(LIGHT, 2);
+  }
+  reset();
+};
+
+function reset() {
+  console.log("RESETTED");
+  activatedPoint = null;
+  swordActivated = false;
+}
+
+const onSwordSuccess = (data) => {
+  if (data == 1) {
+    if (!activatedPoint) {
+      console.log("Sword activated");
+      swordActivated = true;
+      setTimeout(() => {
+        if (swordActivated) {
+          console.log("Sword activated");
+          swordActivated = false;
+        }
+      }, SWORD_TIMEOUT_THRESHOLD);
+      return;
+    }
+    if (score.assignedPatterns.includes(activatedPoint)) {
+      if (!score.patternFenced.includes(activatedPoint)) {
+        score.patternFenced.push(activatedPoint);
+      }
+      //   Emit success light
+      io.emit(LIGHT, 1);
+    } else {
+      //   Emit failure light
+      io.emit(LIGHT, 2);
+    }
+    reset();
   }
 };
 
