@@ -78,6 +78,7 @@ io.sockets.on("connection", function (socket) {
 var swordActivated = false;
 
 const onBoardSuccess = (data) => {
+  console.log("board function");
   if (!swordActivated) {
     activatedPoint = data;
     setTimeout(() => {
@@ -108,7 +109,8 @@ function reset() {
 }
 
 const onSwordSuccess = (data) => {
-  if (data == 1) {
+  console.log("got 0 from sword");
+  if (data == 0) {
     if (!activatedPoint) {
       console.log("Sword activated");
       swordActivated = true;
