@@ -109,7 +109,7 @@ function reset() {
 }
 
 const onSwordSuccess = (data) => {
-  console.log("got 0 from sword");
+  console.log("got from sword");
   if (data == 0) {
     if (!activatedPoint) {
       console.log("Sword activated");
