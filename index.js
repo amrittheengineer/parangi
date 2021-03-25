@@ -27,12 +27,12 @@ const devices = {
 
 app.get("/", (req, res) => {
   res.send("Emitted 1 to " + devices.LIGHT);
-  io.to(devices.LIGHT).emit(LIGHT, 1);
+  io.emit(LIGHT, 1);
 });
 
 app.get("/l2", (req, res) => {
   res.send("Emitted 2 to " + devices.LIGHT);
-  io.to(devices.LIGHT).emit(LIGHT, 2);
+  io.emit(LIGHT, 2);
 });
 
 io.sockets.on("connection", function (socket) {
@@ -84,7 +84,7 @@ const successFence = (data) => {
       score.patternFenced.push(data);
     }
     //   Emit light
-    io.to(devices.LIGHT).emit(LIGHT, 1);
+    io.emit(LIGHT, 1);
   }
 };
 
