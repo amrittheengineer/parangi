@@ -42,6 +42,14 @@ app.get("/l2", (req, res) => {
   io.emit(LIGHT, 2);
 });
 
+app.get("/finish", (req, res) => {
+  const student_name = req.query.student_name.trim();
+  console.log(student_name);
+  return res.send(
+    total_session_data.filter((s) => s.student_name === student_name)
+  );
+});
+
 app.get("/full", (req, res) => {
   res.send("Emitted 0 to " + devices.SWORD + "Emitted 10 to " + devices.BOARD);
   io.emit(SWORD, 2);
