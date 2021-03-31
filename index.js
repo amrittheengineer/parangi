@@ -15,11 +15,11 @@ var activatedPoint = null;
 const SWORD_TIMEOUT_THRESHOLD = 2000;
 
 const score = {
-  assignedPatterns: [],
+  assignedPatterns: [0,1,2,3,4,5,6,7,8,14],
   patternFenced: [],
 };
 
-const devices = {
+const devices = { 
   LIGHT,
   SWORD,
   BOARD,
@@ -34,6 +34,19 @@ app.get("/l2", (req, res) => {
   res.send("Emitted 2 to " + devices.LIGHT);
   io.emit(LIGHT, 2);
 });
+
+
+app.get("/full", (req, res) => {
+  res.send("Emitted 0 to " + devices.SWORD+ "Emitted 10 to " + devices.BOARD);
+  io.emit(SWORD,2);
+  io.emit(BOARD, 10);
+
+  // setTimeout(() => {
+  //   io.emit(BOARD, 10);
+
+  // }, 100);
+});
+
 
 io.sockets.on("connection", function (socket) {
   console.log("Socket connected - " + socket.id);
@@ -58,7 +71,7 @@ io.sockets.on("connection", function (socket) {
   socket.on(SCORE, () => {
     const scoreString = `${score.patternFenced.length}/${score.assignedPatterns.length}`;
     console.log(SCORE, scoreString);
-    io.emit(RESULT, scoreString);
+    io.emit(RESULT, [scoreString]);
   });
 });
 
@@ -78,12 +91,18 @@ io.sockets.on("connection", function (socket) {
 var swordActivated = false;
 
 const onBoardSuccess = (data) => {
-  console.log("board function");
+  if (data !== 14) {
+    console.log("board function" +data);
+  }
+  
+  // console.log(data)
   if (!swordActivated) {
     activatedPoint = data;
     setTimeout(() => {
       if (activatedPoint) {
-        console.log("Board deactivated - " + activatedPoint);
+       
+          console.log("Board deactivated - " + activatedPoint);
+        
         activatedPoint = null;
       }
     }, SWORD_TIMEOUT_THRESHOLD);
@@ -109,14 +128,16 @@ function reset() {
 }
 
 const onSwordSuccess = (data) => {
-  console.log("got from sword");
+  console.log("SWORD" +data);
+  console.log(data) 
   if (data == 0) {
     if (!activatedPoint) {
       console.log("Sword activated");
       swordActivated = true;
       setTimeout(() => {
         if (swordActivated) {
-          console.log("Sword activated");
+          console.log("Sword deactivated");
+          io.emit(LIGHT, 2);
           swordActivated = false;
         }
       }, SWORD_TIMEOUT_THRESHOLD);
