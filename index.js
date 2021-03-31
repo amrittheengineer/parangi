@@ -2,6 +2,11 @@ const app = require("express")();
 const http = require("http").Server(app);
 const io = require("socket.io")(http);
 const PORT = process.env.PORT || 5000;
+const fs = require("fs");
+const FILE_NAME = "session_data.json";
+
+var total_session_data = require(`./${FILE_NAME}`);
+var current_session = {};
 
 const LIGHT = "LIGHT",
   BOARD = "BOARD",
@@ -9,17 +14,19 @@ const LIGHT = "LIGHT",
   RESULT = "RESULT",
   ASSIGN_PATTERN = "ASSIGN_PATTERN",
   REGISTER_CLIENT = "REGISTER_CLIENT",
+  START_SESSION = "START_SESSION",
+  STOP_SESSION = "STOP_SESSION",
   SWORD = "SWORD";
 
 var activatedPoint = null;
 const SWORD_TIMEOUT_THRESHOLD = 2000;
 
 const score = {
-  assignedPatterns: [0,1,2,3,4,5,6,7,8,14],
+  assignedPatterns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 14],
   patternFenced: [],
 };
 
-const devices = { 
+const devices = {
   LIGHT,
   SWORD,
   BOARD,
@@ -35,10 +42,9 @@ app.get("/l2", (req, res) => {
   io.emit(LIGHT, 2);
 });
 
-
 app.get("/full", (req, res) => {
-  res.send("Emitted 0 to " + devices.SWORD+ "Emitted 10 to " + devices.BOARD);
-  io.emit(SWORD,2);
+  res.send("Emitted 0 to " + devices.SWORD + "Emitted 10 to " + devices.BOARD);
+  io.emit(SWORD, 2);
   io.emit(BOARD, 10);
 
   // setTimeout(() => {
@@ -47,7 +53,6 @@ app.get("/full", (req, res) => {
   // }, 100);
 });
 
-
 io.sockets.on("connection", function (socket) {
   console.log("Socket connected - " + socket.id);
 
@@ -55,6 +60,66 @@ io.sockets.on("connection", function (socket) {
   socket.on(REGISTER_CLIENT, function (data) {
     console.log("Socket registered - " + socket.id + " " + data);
     devices[data] = socket.id;
+  });
+
+  //   Start a session
+  socket.on(START_SESSION, function ({ sessiondId, student_name }) {
+    if (current_session.sessiondId) {
+      // already session is created.
+      console.log(
+        "Already session is going - " +
+          current_session.sessiondId +
+          " by " +
+          current_session.student_name
+      );
+
+      return;
+    }
+    console.log("Session started - " + sessiondId + " by " + student_name);
+    current_session = {
+      sessiondId,
+      student_name: student_name.trim(),
+      timestamp: new Date(),
+      assigned: score.assignedPatterns,
+      performance_data: {
+        total_hits: 0,
+        total_success: 0,
+        total_wrong: 0,
+        points_counter: score.assignedPatterns.reduce((cur, key) => {
+          cur[`${key}`] = 0;
+          return cur;
+        }, {}),
+      },
+    };
+    console.log(current_session);
+  });
+
+  //   Stop a session
+  socket.on(STOP_SESSION, function () {
+    if (!current_session.sessiondId) {
+      // if no session is there.
+      console.log("No active session to stop");
+      return;
+    }
+    console.log("Session stopped - " + current_session.sessiondId);
+    // computing total failures
+    current_session.performance_data.total_wrong =
+      current_session.performance_data.total_hits -
+      current_session.performance_data.total_success;
+
+    // Appending the current session data to previous list of sessions.
+    total_session_data = [current_session, ...total_session_data];
+
+    // Writing to local json copy.
+    fs.writeFile(
+      FILE_NAME,
+      JSON.stringify(total_session_data),
+      "utf8",
+      () => null
+    );
+
+    // resetting the session.
+    current_session = {};
   });
 
   //   Fence activation
@@ -92,33 +157,28 @@ var swordActivated = false;
 
 const onBoardSuccess = (data) => {
   if (data !== 14) {
-    console.log("board function" +data);
+    console.log("board function" + data);
   }
-  
+
   // console.log(data)
+  if (activatedPoint) {
+    return;
+  }
   if (!swordActivated) {
     activatedPoint = data;
+    if (current_session.performance_data) {
+      current_session.performance_data.total_hits += 1;
+    }
     setTimeout(() => {
       if (activatedPoint) {
-       
-          console.log("Board deactivated - " + activatedPoint);
-        
+        console.log("Board deactivated - " + activatedPoint);
+
         activatedPoint = null;
       }
     }, SWORD_TIMEOUT_THRESHOLD);
     return;
   }
-  if (score.assignedPatterns.includes(data)) {
-    if (!score.patternFenced.includes(data)) {
-      score.patternFenced.push(data);
-    }
-    //   Emit success light
-    io.emit(LIGHT, 1);
-  } else {
-    //   Emit failure light
-    io.emit(LIGHT, 2);
-  }
-  reset();
+  successAndReset(data);
 };
 
 function reset() {
@@ -127,11 +187,35 @@ function reset() {
   swordActivated = false;
 }
 
+function successAndReset(activatedPoint) {
+  if (score.assignedPatterns.includes(activatedPoint)) {
+    if (!score.patternFenced.includes(activatedPoint)) {
+      score.patternFenced.push(activatedPoint);
+    }
+    //   Emit success light
+    io.emit(LIGHT, 1);
+    if (current_session.performance_data) {
+      current_session.performance_data.total_success += 1;
+      current_session.performance_data.points_counter[`${activatedPoint}`] += 1;
+    }
+  } else {
+    //   Emit failure light
+    io.emit(LIGHT, 2);
+  }
+  reset();
+}
+
 const onSwordSuccess = (data) => {
-  console.log("SWORD" +data);
-  console.log(data) 
+  if (swordActivated) {
+    return;
+  }
+  console.log("SWORD" + data);
+  console.log(data);
   if (data == 0) {
     if (!activatedPoint) {
+      if (current_session.performance_data) {
+        current_session.performance_data.total_hits += 1;
+      }
       console.log("Sword activated");
       swordActivated = true;
       setTimeout(() => {
@@ -143,17 +227,7 @@ const onSwordSuccess = (data) => {
       }, SWORD_TIMEOUT_THRESHOLD);
       return;
     }
-    if (score.assignedPatterns.includes(activatedPoint)) {
-      if (!score.patternFenced.includes(activatedPoint)) {
-        score.patternFenced.push(activatedPoint);
-      }
-      //   Emit success light
-      io.emit(LIGHT, 1);
-    } else {
-      //   Emit failure light
-      io.emit(LIGHT, 2);
-    }
-    reset();
+    successAndReset(activatedPoint);
   }
 };
 
