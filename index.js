@@ -24,7 +24,28 @@ const SWORD_TIMEOUT_THRESHOLD = 2000;
 const score = {
   assignedPatterns: [],
   patternFenced: [],
-  boardPoints:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+  boardPoints: [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+  ],
 };
 
 const devices = {
@@ -50,7 +71,6 @@ app.get("/finish", (req, res) => {
     total_session_data.filter((s) => s.student_name === student_name)
   );
 });
-
 
 io.sockets.on("connection", function (socket) {
   console.log("Socket connected - " + socket.id);
@@ -84,7 +104,7 @@ io.sockets.on("connection", function (socket) {
         total_hits: 0,
         total_success: 0,
         total_wrong: 0,
-        points_counter: score.assignedPatterns.reduce((cur, key) => {
+        points_counter: score.boardPoints.reduce((cur, key) => {
           cur[`${key}`] = 0;
           return cur;
         }, {}),
@@ -187,6 +207,9 @@ function reset() {
 }
 
 function successAndReset(activatedPoint) {
+  if (current_session.performance_data) {
+    current_session.performance_data.points_counter[`${activatedPoint}`] += 1;
+  }
   if (score.assignedPatterns.includes(activatedPoint)) {
     if (!score.patternFenced.includes(activatedPoint)) {
       score.patternFenced.push(activatedPoint);
@@ -195,7 +218,6 @@ function successAndReset(activatedPoint) {
     io.emit(LIGHT, 1);
     if (current_session.performance_data) {
       current_session.performance_data.total_success += 1;
-      current_session.performance_data.points_counter[`${activatedPoint}`] += 1;
     }
   } else {
     //   Emit failure light
