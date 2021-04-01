@@ -22,7 +22,7 @@ var activatedPoint = null;
 const SWORD_TIMEOUT_THRESHOLD = 2000;
 
 const score = {
-  assignedPatterns: [],
+  assignedPatterns: [13],
   patternFenced: [],
   boardPoints: [
     0,
@@ -104,6 +104,9 @@ io.sockets.on("connection", function (socket) {
       sessiondId,
       student_name: student_name.trim(),
       timestamp: new Date(),
+      startTime:new Date(),
+      endTime:"",
+      sessionDuration:"",
       assigned: score.assignedPatterns,
       performance_data: {
         total_hits: 0,
@@ -130,6 +133,10 @@ io.sockets.on("connection", function (socket) {
     current_session.performance_data.total_wrong =
       current_session.performance_data.total_hits -
       current_session.performance_data.total_success;
+    //setting end time and duration
+      current_session.endTime = new Date()
+      var diffMs = (current_session.endTime - current_session.startTime);
+      current_session.sessionDuration= Math.round(((diffMs % 86400000) % 3600000) / 60000);
 
     // Appending the current session data to previous list of sessions.
     total_session_data = [current_session, ...total_session_data];
@@ -227,10 +234,11 @@ const onSwordSuccess = (data) => {
       }
       console.log("Sword activated");
       swordActivated = true;
+      io.emit(LIGHT, 2);
       setTimeout(() => {
         if (swordActivated) {
           console.log("Sword deactivated");
-          io.emit(LIGHT, 2);
+          // io.emit(LIGHT, 2);
           swordActivated = false;
         }
       }, SWORD_TIMEOUT_THRESHOLD);
