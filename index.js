@@ -72,6 +72,11 @@ app.get("/finish", (req, res) => {
   );
 });
 
+app.get("/getAssigned", (req, res) => {
+  return res.send(
+    score.assignedPatterns
+  );
+})
 io.sockets.on("connection", function (socket) {
   console.log("Socket connected - " + socket.id);
 
@@ -141,10 +146,6 @@ io.sockets.on("connection", function (socket) {
     current_session = {};
   });
 
-  //   Fence activation
-  socket.on(SWORD, onSwordSuccess);
-  socket.on(BOARD, onBoardSuccess);
-
   //   Assign pattern
   socket.on(ASSIGN_PATTERN, (data) => {
     console.log(data);
@@ -157,28 +158,16 @@ io.sockets.on("connection", function (socket) {
     console.log(SCORE, scoreString);
     io.emit(RESULT, [scoreString]);
   });
+
+  //   Fence activation
+  socket.on(SWORD, onSwordSuccess);
+  socket.on(BOARD, onBoardSuccess);
 });
-
-// const fenceListener = (data) => {
-//   if (activated) {
-//     return successFence(data);
-//   }
-
-//   activated = true;
-//   setTimeout(() => {
-//     if (activated) {
-//       activated = false;
-//     }
-//   }, SWORD_TIMEOUT_THRESHOLD);
-// };
 
 var swordActivated = false;
 
 const onBoardSuccess = (data) => {
-  if (data !== 14) {
     console.log("board function" + data);
-  }
-
   // console.log(data)
   if (activatedPoint) {
     return;
@@ -231,7 +220,6 @@ const onSwordSuccess = (data) => {
     return;
   }
   console.log("SWORD" + data);
-  console.log(data);
   if (data == 0) {
     if (!activatedPoint) {
       if (current_session.performance_data) {
@@ -253,3 +241,16 @@ const onSwordSuccess = (data) => {
 };
 
 http.listen(PORT, () => console.log("App is running at port " + PORT));
+
+// const fenceListener = (data) => {
+//   if (activated) {
+//     return successFence(data);
+//   }
+
+//   activated = true;
+//   setTimeout(() => {
+//     if (activated) {
+//       activated = false;
+//     }
+//   }, SWORD_TIMEOUT_THRESHOLD);
+// };
