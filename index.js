@@ -135,8 +135,7 @@ io.sockets.on("connection", function (socket) {
       current_session.performance_data.total_success;
     //setting end time and duration
       current_session.endTime = new Date()
-      var diffMs = (current_session.endTime - current_session.startTime);
-      current_session.sessionDuration= Math.round(((diffMs % 86400000) % 3600000) / 60000);
+      current_session.sessionDuration= (current_session.endTime - current_session.startTime) ;
 
     // Appending the current session data to previous list of sessions.
     total_session_data = [current_session, ...total_session_data];
